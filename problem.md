@@ -1,0 +1,2 @@
+Problem:
+When listing all individuals, the entire dataset is returned, which makes it difficult for the frontend developer to handle such a large volume of information. Request: Add a new paginated endpoint for listing individuals. This endpoint should accept parameters for the number of items per page (`n`) and the page number (`numpage`), and return the corresponding `n` individuals for that page, along with the total number of pages and the total number of individuals.
