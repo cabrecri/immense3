@@ -6,6 +6,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
@@ -19,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * Errors are delegated to the {@link HandlerExceptionResolver} so they are rendered by
  * the same {@code @RestControllerAdvice} as every other error response.
  */
+@Component
 public class ApiKeyFilter extends OncePerRequestFilter {
 
     public static final String HEADER = "X-API-Key";
@@ -34,7 +38,9 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     private final byte[] expectedDigest;
     private final HandlerExceptionResolver resolver;
 
-    public ApiKeyFilter(String expectedKey, HandlerExceptionResolver resolver) {
+    public ApiKeyFilter(
+            @Value("${app.security.api-key}") String expectedKey,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
         if (expectedKey == null || expectedKey.isBlank()) {
             throw new IllegalStateException(
                     "The expected API key is not configured: set the PEOPLE_API_KEY environment variable");

@@ -11,11 +11,45 @@ Sample REST API built with **Spring Boot 4.1.2**, **Java 17** and **Maven** that
 
 ## Running the application
 
+The API requires an API key. Set it in the `PEOPLE_API_KEY` environment variable before starting (the app refuses to start without it):
+
 ```bash
+# Git Bash / Linux / macOS
+export PEOPLE_API_KEY=change-me
+mvn spring-boot:run
+
+# PowerShell
+$env:PEOPLE_API_KEY = "change-me"
 mvn spring-boot:run
 ```
 
 The app listens on `http://localhost:8080`. On startup it creates the `people` table and loads 3 rows from `src/main/resources/data.sql`.
+
+## Authentication
+
+Every request to the API must send the key in the `X-API-Key` header (everything except the H2 console is protected):
+
+```bash
+curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
+```
+
+| Situation                          | Response           |
+|------------------------------------|--------------------|
+| Header missing or blank            | `401 Unauthorized` |
+| Header present but key not valid   | `403 Forbidden`    |
+
+Both errors are `application/problem+json`; the `401` also carries a `WWW-Authenticate: ApiKey realm="people-api"` header:
+
+```json
+{
+  "title": "API key missing",
+  "status": 401,
+  "detail": "Missing X-API-Key header",
+  "instance": "/api/people"
+}
+```
+
+The key is compared in constant time and is never logged. This is a single shared key meant for a demo API; roles and JWT will come later. The H2 console (`/h2-console`) is the only public path, meant for development.
 
 ## Endpoints
 
@@ -58,7 +92,7 @@ The app listens on `http://localhost:8080`. On startup it creates the `people` t
 People are ordered by `id`. A page past the last one returns an empty `content` with the same totals. `n` above 100, or a `numpage` so large that the offset overflows, also returns `400` as problem+json. `page` and `size` echo the request, so `size` is the requested page size even when the last page has fewer items.
 
 ```bash
-curl "http://localhost:8080/api/people/page?n=2&numpage=1"
+curl -H "X-API-Key: $PEOPLE_API_KEY" "http://localhost:8080/api/people/page?n=2&numpage=1"
 ```
 
 ```json
@@ -90,9 +124,10 @@ A missing or non-numeric parameter also returns `400` (Spring's default error bo
 ## Quick checks
 
 ```bash
-curl http://localhost:8080/api/people
-curl http://localhost:8080/api/people/1
-curl -i http://localhost:8080/api/people/999
+curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
+curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/1
+curl -i -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/999
+curl -i http://localhost:8080/api/people
 ```
 
 ## H2 console

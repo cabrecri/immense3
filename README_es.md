@@ -11,11 +11,45 @@ API REST de ejemplo con **Spring Boot 4.1.2**, **Java 17** y **Maven** que persi
 
 ## Correr la aplicación
 
+La API exige una clave. Definila en la variable de entorno `PEOPLE_API_KEY` antes de arrancar (la app no arranca sin ella):
+
 ```bash
+# Git Bash / Linux / macOS
+export PEOPLE_API_KEY=cambiame
+mvn spring-boot:run
+
+# PowerShell
+$env:PEOPLE_API_KEY = "cambiame"
 mvn spring-boot:run
 ```
 
 La app queda en `http://localhost:8080`. Al iniciar se crea la tabla `people` y se cargan 3 registros desde `src/main/resources/data.sql`.
+
+## Autenticación
+
+Todo request a la API debe enviar la clave en el header `X-API-Key` (todo excepto la consola H2 está protegido):
+
+```bash
+curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
+```
+
+| Situación                          | Respuesta          |
+|------------------------------------|--------------------|
+| Header ausente o vacío             | `401 Unauthorized` |
+| Header presente con clave inválida | `403 Forbidden`    |
+
+Ambos errores son `application/problem+json`; el `401` además incluye el header `WWW-Authenticate: ApiKey realm="people-api"`:
+
+```json
+{
+  "title": "API key missing",
+  "status": 401,
+  "detail": "Missing X-API-Key header",
+  "instance": "/api/people"
+}
+```
+
+La clave se compara en tiempo constante y nunca se loguea. Es una única clave compartida pensada para una API demo; los roles y JWT vendrán después. La consola H2 (`/h2-console`) es la única ruta pública, pensada para desarrollo.
 
 ## Endpoints
 
@@ -58,7 +92,7 @@ Ejemplo de error `404` (formato RFC 9457 `application/problem+json`):
 Las personas se ordenan por `id`. Una página posterior a la última devuelve `content` vacío con los mismos totales. Un `n` mayor a 100, o un `numpage` tan grande que el desplazamiento desborda, también devuelve `400` como problem+json. `page` y `size` reflejan lo solicitado, por lo que `size` es el tamaño de página pedido aunque la última página tenga menos ítems.
 
 ```bash
-curl "http://localhost:8080/api/people/page?n=2&numpage=1"
+curl -H "X-API-Key: $PEOPLE_API_KEY" "http://localhost:8080/api/people/page?n=2&numpage=1"
 ```
 
 ```json
@@ -90,9 +124,10 @@ Un parámetro faltante o no numérico también responde `400` (cuerpo de error p
 ## Pruebas rápidas
 
 ```bash
-curl http://localhost:8080/api/people
-curl http://localhost:8080/api/people/1
-curl -i http://localhost:8080/api/people/999
+curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
+curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/1
+curl -i -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/999
+curl -i http://localhost:8080/api/people
 ```
 
 ## Consola H2
