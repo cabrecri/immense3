@@ -9,6 +9,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @DataJpaTest
 class PersonRepositoryTest {
@@ -46,5 +49,32 @@ class PersonRepositoryTest {
 
         assertThat(saved.getId()).isNotNull();
         assertThat(repository.findById(saved.getId())).isPresent();
+    }
+
+    @Test
+    void findAll_pageable_returnsFirstPageWithTotals() {
+        Page<Person> page = repository.findAll(PageRequest.of(0, 2, Sort.by("id")));
+
+        assertThat(page.getContent()).extracting(Person::getFirstName).containsExactly("Ada", "Alan");
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void findAll_pageable_lastPageHoldsTheRemainder() {
+        Page<Person> page = repository.findAll(PageRequest.of(1, 2, Sort.by("id")));
+
+        assertThat(page.getContent()).extracting(Person::getFirstName).containsExactly("Grace");
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void findAll_pageable_beyondLastPageIsEmptyButKeepsTotals() {
+        Page<Person> page = repository.findAll(PageRequest.of(5, 2, Sort.by("id")));
+
+        assertThat(page.getContent()).isEmpty();
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getTotalPages()).isEqualTo(2);
     }
 }
