@@ -13,12 +13,16 @@ Sample REST API built with **Spring Boot 4.1.2**, **Java 17** and **Maven** that
 
 The API requires an API key. Set it in the `PEOPLE_API_KEY` environment variable before starting (the app refuses to start without it):
 
+Git Bash / Linux / macOS:
+
 ```bash
-# Git Bash / Linux / macOS
 export PEOPLE_API_KEY=change-me
 mvn spring-boot:run
+```
 
-# PowerShell
+PowerShell:
+
+```powershell
 $env:PEOPLE_API_KEY = "change-me"
 mvn spring-boot:run
 ```
@@ -29,8 +33,16 @@ The app listens on `http://localhost:8080`. On startup it creates the `people` t
 
 Every request to the API must send the key in the `X-API-Key` header (everything except the H2 console is protected):
 
+Git Bash / Linux / macOS:
+
 ```bash
 curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
+```
+
+PowerShell:
+
+```powershell
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people
 ```
 
 | Situation                          | Response           |
@@ -49,7 +61,11 @@ Both errors are `application/problem+json`; the `401` also carries a `WWW-Authen
 }
 ```
 
-The key is compared in constant time and is never logged. This is a single shared key meant for a demo API; roles and JWT will come later. The H2 console (`/h2-console`) is the only public path, meant for development.
+The key is compared in constant time and is never logged. This is a single shared key meant for a demo API; roles and JWT will come later.
+
+The key must be a printable ASCII string without leading or trailing spaces or line breaks (a trailing newline from a secrets file makes every request fail with 403).
+
+The H2 console (`/h2-console`) is the only path that is NOT protected by the API key. It only accepts connections from localhost by default (`spring.h2.console.settings.web-allow-others=false`), but anyone with access to it can read all data and even the environment variables of the process, including `PEOPLE_API_KEY`, so it is for local development only and must not be enabled in a shared or production environment.
 
 ## Endpoints
 
@@ -91,8 +107,16 @@ The key is compared in constant time and is never logged. This is a single share
 
 People are ordered by `id`. A page past the last one returns an empty `content` with the same totals. `n` above 100, or a `numpage` so large that the offset overflows, also returns `400` as problem+json. `page` and `size` echo the request, so `size` is the requested page size even when the last page has fewer items.
 
+Git Bash / Linux / macOS:
+
 ```bash
 curl -H "X-API-Key: $PEOPLE_API_KEY" "http://localhost:8080/api/people/page?n=2&numpage=1"
+```
+
+PowerShell:
+
+```powershell
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" "http://localhost:8080/api/people/page?n=2&numpage=1"
 ```
 
 ```json
@@ -123,11 +147,22 @@ A missing or non-numeric parameter also returns `400` (Spring's default error bo
 
 ## Quick checks
 
+Git Bash / Linux / macOS:
+
 ```bash
 curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
 curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/1
 curl -i -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/999
-curl -i http://localhost:8080/api/people
+curl -i http://localhost:8080/api/people   # no key: expect 401
+```
+
+PowerShell:
+
+```powershell
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people/1
+curl.exe -i -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people/999
+curl.exe -i http://localhost:8080/api/people   # no key: expect 401
 ```
 
 ## H2 console

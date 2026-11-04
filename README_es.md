@@ -13,12 +13,16 @@ API REST de ejemplo con **Spring Boot 4.1.2**, **Java 17** y **Maven** que persi
 
 La API exige una clave. Definila en la variable de entorno `PEOPLE_API_KEY` antes de arrancar (la app no arranca sin ella):
 
+Git Bash / Linux / macOS:
+
 ```bash
-# Git Bash / Linux / macOS
 export PEOPLE_API_KEY=cambiame
 mvn spring-boot:run
+```
 
-# PowerShell
+PowerShell:
+
+```powershell
 $env:PEOPLE_API_KEY = "cambiame"
 mvn spring-boot:run
 ```
@@ -29,8 +33,16 @@ La app queda en `http://localhost:8080`. Al iniciar se crea la tabla `people` y 
 
 Todo request a la API debe enviar la clave en el header `X-API-Key` (todo excepto la consola H2 está protegido):
 
+Git Bash / Linux / macOS:
+
 ```bash
 curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
+```
+
+PowerShell:
+
+```powershell
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people
 ```
 
 | Situación                          | Respuesta          |
@@ -49,7 +61,11 @@ Ambos errores son `application/problem+json`; el `401` además incluye el header
 }
 ```
 
-La clave se compara en tiempo constante y nunca se loguea. Es una única clave compartida pensada para una API demo; los roles y JWT vendrán después. La consola H2 (`/h2-console`) es la única ruta pública, pensada para desarrollo.
+La clave se compara en tiempo constante y nunca se loguea. Es una única clave compartida pensada para una API demo; los roles y JWT vendrán después.
+
+La clave debe ser una cadena ASCII imprimible, sin espacios ni saltos de línea al principio o al final (un salto de línea final proveniente de un archivo de secretos hace que todos los requests fallen con 403).
+
+La consola H2 (`/h2-console`) es la única ruta que NO está protegida por la clave de API. Por defecto solo acepta conexiones desde localhost (`spring.h2.console.settings.web-allow-others=false`), pero quien tenga acceso a ella puede leer todos los datos e incluso las variables de entorno del proceso, incluida `PEOPLE_API_KEY`, por lo que es solo para desarrollo local y no debe habilitarse en un entorno compartido ni de producción.
 
 ## Endpoints
 
@@ -91,8 +107,16 @@ Ejemplo de error `404` (formato RFC 9457 `application/problem+json`):
 
 Las personas se ordenan por `id`. Una página posterior a la última devuelve `content` vacío con los mismos totales. Un `n` mayor a 100, o un `numpage` tan grande que el desplazamiento desborda, también devuelve `400` como problem+json. `page` y `size` reflejan lo solicitado, por lo que `size` es el tamaño de página pedido aunque la última página tenga menos ítems.
 
+Git Bash / Linux / macOS:
+
 ```bash
 curl -H "X-API-Key: $PEOPLE_API_KEY" "http://localhost:8080/api/people/page?n=2&numpage=1"
+```
+
+PowerShell:
+
+```powershell
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" "http://localhost:8080/api/people/page?n=2&numpage=1"
 ```
 
 ```json
@@ -123,11 +147,22 @@ Un parámetro faltante o no numérico también responde `400` (cuerpo de error p
 
 ## Pruebas rápidas
 
+Git Bash / Linux / macOS:
+
 ```bash
 curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people
 curl -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/1
 curl -i -H "X-API-Key: $PEOPLE_API_KEY" http://localhost:8080/api/people/999
-curl -i http://localhost:8080/api/people
+curl -i http://localhost:8080/api/people   # sin clave: devuelve 401
+```
+
+PowerShell:
+
+```powershell
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people
+curl.exe -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people/1
+curl.exe -i -H "X-API-Key: $env:PEOPLE_API_KEY" http://localhost:8080/api/people/999
+curl.exe -i http://localhost:8080/api/people   # sin clave: devuelve 401
 ```
 
 ## Consola H2

@@ -175,4 +175,11 @@ class PeopleApiIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.title").value("API key missing"));
     }
+
+    @Test
+    void getError_withoutKey_returns401() throws Exception {
+        mockMvc.perform(get("/error"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("API key missing"));
+    }
 }
