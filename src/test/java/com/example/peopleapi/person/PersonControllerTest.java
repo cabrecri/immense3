@@ -85,4 +85,45 @@ class PersonControllerTest {
         mockMvc.perform(get("/api/people/abc"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void getPage_returnsPagedResponse() throws Exception {
+        when(service.findPage(2, 1)).thenReturn(new PagedPeopleResponse(List.of(ada, alan), 1, 2, 2, 3L));
+
+        mockMvc.perform(get("/api/people/page").param("n", "2").param("numpage", "1"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].firstName").value("Ada"))
+                .andExpect(jsonPath("$.content[1].firstName").value("Alan"))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.totalItems").value(3));
+    }
+
+    @Test
+    void getPage_returns400ProblemDetailWhenParamsAreInvalid() throws Exception {
+        when(service.findPage(0, 1)).thenThrow(new InvalidPageRequestException("n must be >= 1 but was 0"));
+
+        mockMvc.perform(get("/api/people/page").param("n", "0").param("numpage", "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Invalid page request"))
+                .andExpect(jsonPath("$.detail").value("n must be >= 1 but was 0"));
+    }
+
+    @Test
+    void getPage_returns400WhenParamIsMissing() throws Exception {
+        mockMvc.perform(get("/api/people/page").param("n", "2"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getPage_returns400WhenParamIsNotNumeric() throws Exception {
+        mockMvc.perform(get("/api/people/page").param("n", "abc").param("numpage", "1"))
+                .andExpect(status().isBadRequest());
+    }
 }
