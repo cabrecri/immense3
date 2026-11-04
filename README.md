@@ -19,10 +19,11 @@ The app listens on `http://localhost:8080`. On startup it creates the `people` t
 
 ## Endpoints
 
-| Method | Path               | Description              | Response                       |
-|--------|--------------------|--------------------------|--------------------------------|
-| GET    | `/api/people`      | Lists all people         | `200` + array of `Person`      |
-| GET    | `/api/people/{id}` | Gets one person by id    | `200` + `Person`, or `404`     |
+| Method | Path                               | Description                              | Response                              |
+|--------|------------------------------------|------------------------------------------|---------------------------------------|
+| GET    | `/api/people`                      | Lists all people                         | `200` + array of `Person`             |
+| GET    | `/api/people/{id}`                 | Gets one person by id                    | `200` + `Person`, or `404`            |
+| GET    | `/api/people/page?n=&numpage=`     | Lists people page by page (see below)    | `200` + page object, or `400`         |
 
 `Person` example:
 
@@ -46,6 +47,45 @@ The app listens on `http://localhost:8080`. On startup it creates the `people` t
   "instance": "/api/people/999"
 }
 ```
+
+### Pagination
+
+`GET /api/people/page` takes two required query parameters:
+
+- `n`: items per page (`>= 1`)
+- `numpage`: page number, starting at `1`
+
+People are ordered by `id`. A page past the last one returns an empty `content` with the same totals.
+
+```bash
+curl "http://localhost:8080/api/people/page?n=2&numpage=1"
+```
+
+```json
+{
+  "content": [
+    { "id": 1, "firstName": "Ada", "lastName": "Lovelace", "email": "ada@example.com", "birthDate": "1815-12-10" },
+    { "id": 2, "firstName": "Alan", "lastName": "Turing", "email": "alan@example.com", "birthDate": "1912-06-23" }
+  ],
+  "page": 1,
+  "size": 2,
+  "totalPages": 2,
+  "totalItems": 3
+}
+```
+
+`n` or `numpage` below `1` returns `400` as `application/problem+json`:
+
+```json
+{
+  "title": "Invalid page request",
+  "status": 400,
+  "detail": "n must be >= 1 but was 0",
+  "instance": "/api/people/page"
+}
+```
+
+A missing or non-numeric parameter also returns `400` (Spring's default error body).
 
 ## Quick checks
 

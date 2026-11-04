@@ -19,10 +19,11 @@ La app queda en `http://localhost:8080`. Al iniciar se crea la tabla `people` y 
 
 ## Endpoints
 
-| Método | Ruta               | Descripción                 | Respuesta                      |
-|--------|--------------------|-----------------------------|--------------------------------|
-| GET    | `/api/people`      | Lista todas las personas    | `200` + array de `Person`      |
-| GET    | `/api/people/{id}` | Obtiene una persona por id  | `200` + `Person`, o `404`      |
+| Método | Ruta                               | Descripción                               | Respuesta                             |
+|--------|------------------------------------|-------------------------------------------|---------------------------------------|
+| GET    | `/api/people`                      | Lista todas las personas                  | `200` + array de `Person`             |
+| GET    | `/api/people/{id}`                 | Obtiene una persona por id                | `200` + `Person`, o `404`             |
+| GET    | `/api/people/page?n=&numpage=`     | Lista personas por páginas (ver abajo)    | `200` + objeto página, o `400`        |
 
 Ejemplo de `Person`:
 
@@ -46,6 +47,45 @@ Ejemplo de error `404` (formato RFC 9457 `application/problem+json`):
   "instance": "/api/people/999"
 }
 ```
+
+### Paginación
+
+`GET /api/people/page` recibe dos parámetros de query obligatorios:
+
+- `n`: cantidad de ítems por página (`>= 1`)
+- `numpage`: número de página, empezando en `1`
+
+Las personas se ordenan por `id`. Una página posterior a la última devuelve `content` vacío con los mismos totales.
+
+```bash
+curl "http://localhost:8080/api/people/page?n=2&numpage=1"
+```
+
+```json
+{
+  "content": [
+    { "id": 1, "firstName": "Ada", "lastName": "Lovelace", "email": "ada@example.com", "birthDate": "1815-12-10" },
+    { "id": 2, "firstName": "Alan", "lastName": "Turing", "email": "alan@example.com", "birthDate": "1912-06-23" }
+  ],
+  "page": 1,
+  "size": 2,
+  "totalPages": 2,
+  "totalItems": 3
+}
+```
+
+Si `n` o `numpage` son menores a `1`, responde `400` como `application/problem+json`:
+
+```json
+{
+  "title": "Invalid page request",
+  "status": 400,
+  "detail": "n must be >= 1 but was 0",
+  "instance": "/api/people/page"
+}
+```
+
+Un parámetro faltante o no numérico también responde `400` (cuerpo de error por defecto de Spring).
 
 ## Pruebas rápidas
 
