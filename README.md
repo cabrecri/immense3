@@ -52,10 +52,10 @@ The app listens on `http://localhost:8080`. On startup it creates the `people` t
 
 `GET /api/people/page` takes two required query parameters:
 
-- `n`: items per page (`>= 1`)
+- `n`: items per page (`1` to `100`)
 - `numpage`: page number, starting at `1`
 
-People are ordered by `id`. A page past the last one returns an empty `content` with the same totals.
+People are ordered by `id`. A page past the last one returns an empty `content` with the same totals. `n` above 100, or a `numpage` so large that the offset overflows, also returns `400` as problem+json. `page` and `size` echo the request, so `size` is the requested page size even when the last page has fewer items.
 
 ```bash
 curl "http://localhost:8080/api/people/page?n=2&numpage=1"

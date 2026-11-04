@@ -124,4 +124,38 @@ class PersonServiceTest {
                 .hasMessage("numpage must be >= 1 but was 0");
         verifyNoInteractions(repository);
     }
+
+    @Test
+    void findPage_rejectsSizeAboveMax() {
+        assertThatThrownBy(() -> service.findPage(101, 1))
+                .isInstanceOf(InvalidPageRequestException.class)
+                .hasMessage("n must be <= 100 but was 101");
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void findPage_acceptsSizeAtMax() {
+        when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 100), 3));
+
+        PagedPeopleResponse result = service.findPage(100, 1);
+
+        assertThat(result.size()).isEqualTo(100);
+    }
+
+    @Test
+    void findPage_rejectsOffsetBeyondIntegerRange() {
+        assertThatThrownBy(() -> service.findPage(100, 30000000))
+                .isInstanceOf(InvalidPageRequestException.class)
+                .hasMessage("numpage is too large for n=100");
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void findPage_acceptsLargestPageWithinIntegerRange() {
+        when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 1), 3));
+
+        PagedPeopleResponse result = service.findPage(1, Integer.MAX_VALUE);
+
+        assertThat(result.content()).isEmpty();
+    }
 }

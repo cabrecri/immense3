@@ -97,4 +97,21 @@ class PeopleApiIntegrationTest {
                 .andExpect(jsonPath("$.detail").value("n must be >= 1 but was 0"))
                 .andExpect(jsonPath("$.instance").value("/api/people/page"));
     }
+
+    @Test
+    void getPage_rejectsHugePageNumberInsteadOfFailing() throws Exception {
+        mockMvc.perform(get("/api/people/page").param("n", "100").param("numpage", "30000000"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Invalid page request"))
+                .andExpect(jsonPath("$.detail").value("numpage is too large for n=100"));
+    }
+
+    @Test
+    void getPage_rejectsSizeAboveMax() throws Exception {
+        mockMvc.perform(get("/api/people/page").param("n", "101").param("numpage", "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("n must be <= 100 but was 101"));
+    }
 }

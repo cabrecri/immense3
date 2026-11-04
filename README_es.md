@@ -52,10 +52,10 @@ Ejemplo de error `404` (formato RFC 9457 `application/problem+json`):
 
 `GET /api/people/page` recibe dos parámetros de query obligatorios:
 
-- `n`: cantidad de ítems por página (`>= 1`)
+- `n`: cantidad de ítems por página (`1` a `100`)
 - `numpage`: número de página, empezando en `1`
 
-Las personas se ordenan por `id`. Una página posterior a la última devuelve `content` vacío con los mismos totales.
+Las personas se ordenan por `id`. Una página posterior a la última devuelve `content` vacío con los mismos totales. Un `n` mayor a 100, o un `numpage` tan grande que el desplazamiento desborda, también devuelve `400` como problem+json. `page` y `size` reflejan lo solicitado, por lo que `size` es el tamaño de página pedido aunque la última página tenga menos ítems.
 
 ```bash
 curl "http://localhost:8080/api/people/page?n=2&numpage=1"
