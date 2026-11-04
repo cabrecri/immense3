@@ -47,6 +47,9 @@ class PeopleApiIntegrationTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.title").value("Person not found"))
-                .andExpect(jsonPath("$.detail").value("Person with id 999 not found"));
+                .andExpect(jsonPath("$.detail").value("Person with id 999 not found"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.instance").value("/api/people/999"))
+                .andExpect(jsonPath("$.type").doesNotExist());
     }
 }

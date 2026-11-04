@@ -38,7 +38,6 @@ Ejemplo de error `404` (formato RFC 9457 `application/problem+json`):
 
 ```json
 {
-  "type": "about:blank",
   "title": "Person not found",
   "status": 404,
   "detail": "Person with id 999 not found",
